@@ -1,1 +1,1 @@
-python telegram/cdedfce.py
+start: python telegram/cdedfce.py
