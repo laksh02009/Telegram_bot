@@ -98,8 +98,9 @@ async def send_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
     now = datetime.now().strftime("%d-%m-%Y %H:%M")
 
     summary_lines = [
-        f"*📄 Today's Report - {name}*",
-        f"*🕒 Date & Time:* {now}",
+        f"*📄 Today's Report - {now}*",
+        "",
+        f"*👤 Inspected by:* {name}",
         ""
     ]
 
@@ -117,7 +118,7 @@ async def send_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 def main():
-    app = ApplicationBuilder().token("YOUR_BOT_TOKEN_HERE").build()
+    app = ApplicationBuilder().token("7998832352:AAENC5rlDMjQbLylmLsCHbzX5eZLV5mJoWs").build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button))
@@ -128,6 +129,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
