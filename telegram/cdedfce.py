@@ -36,7 +36,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "awaiting_name": True,
         "awaiting_remark": False
     }
-    await update.message.reply_text("👋 Hello! Please enter your *name* to begin:", parse_mode='Markdown')
+    await update.message.reply_text("👋 Hello! What is your *name*?", parse_mode='Markdown')
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -46,7 +46,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Please start the bot using /start.")
         return
 
-    # Save name
     if data.get("awaiting_name"):
         data["name"] = update.message.text.strip()
         data["awaiting_name"] = False
@@ -99,7 +98,7 @@ async def send_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
     now = datetime.now().strftime("%d-%m-%Y %H:%M")
 
     summary_lines = [
-        f"*🧾 Summary Report for {name}*",
+        f"*📄 Today's Report - {name}*",
         f"*🕒 Date & Time:* {now}",
         ""
     ]
@@ -118,7 +117,7 @@ async def send_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 def main():
-    app = ApplicationBuilder().token("7998832352:AAENC5rlDMjQbLylmLsCHbzX5eZLV5mJoWs").build()
+    app = ApplicationBuilder().token("YOUR_BOT_TOKEN_HERE").build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button))
@@ -129,5 +128,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
