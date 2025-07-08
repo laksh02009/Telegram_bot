@@ -82,7 +82,10 @@ async def send_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     data = user_data[user_id]
     name = data["name"]
-    now = datetime.now().strftime("%d-%m-%Y %H:%M")
+    from datetime import datetime, timedelta, timezone
+    IST = timezone(timedelta(hours=5, minutes=30))
+    now = datetime.now(IST).strftime("%d-%m-%Y %H:%M")
+
     summary_lines = [
         f"*📄 Today's Report - {now}*",
         f"*👤 Inspected by:* {name}",
