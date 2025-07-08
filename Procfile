@@ -1,1 +1,1 @@
-start: python telegram/cdedfce.py
+web: python telegram/bot.py
