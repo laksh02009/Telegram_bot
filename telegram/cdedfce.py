@@ -112,7 +112,7 @@ app.add_error_handler(error_handler)
 app.run_webhook(
     listen="0.0.0.0",
     port=int(os.environ.get("PORT", 8080)),
-    webhook_url="https://telegrambot-production-e0e4.up.railway.app/webhook"
+    webhook_url="https://telegrambot-production-fa9e.up.railway.app"
 )
 
 
