@@ -1,43 +1,43 @@
+import os
+import logging
+import asyncio
+from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, CallbackQueryHandler,
     MessageHandler, filters, ContextTypes
 )
-from datetime import datetime
+from telegram.error import TelegramError
 
+# Logging
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
+)
+
+# Error handler
+async def error_handler(update, context):
+    logging.error(msg="Exception while handling an update:", exc_info=context.error)
+
+# Questions
 questions = [
-    {
-        "text": "Is the EV charging working?",
-        "options": ["Yes", "No"]
-    },
-    {
-        "text": "Is the CARE entry Andon Board Working?",
-        "options": ["Yes", "No"]
-    },
-    {
-        "text": "Flags Performance Overview Screen working?",
-        "options": ["Yes", "No"]
-    },
-    {
-        "text": "Cluster Andon Screen Working?",
-        "options": ["Yes", "No"]
-    }
+    {"text": "Is the EV charging working?", "options": ["Yes", "No"]},
+    {"text": "Is the CARE entry Andon Board Working?", "options": ["Yes", "No"]},
+    {"text": "Flags Performance Overview Screen working?", "options": ["Yes", "No"]},
+    {"text": "Cluster Andon Screen Working?", "options": ["Yes", "No"]}
 ]
 
 user_data = {}
 
+# /start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     user_data[user_id] = {
-        "name": None,
-        "answers": [],
-        "remarks": [],
-        "current_q": 0,
-        "awaiting_name": True,
-        "awaiting_remark": False
+        "name": None, "answers": [], "remarks": [],
+        "current_q": 0, "awaiting_name": True, "awaiting_remark": False
     }
     await update.message.reply_text("👋 Hello! What is your *name*?", parse_mode='Markdown')
 
+# Handle user input
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     data = user_data.get(user_id)
@@ -46,16 +46,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Please start the bot using /start.")
         return
 
-    if data.get("awaiting_name"):
+    if data["awaiting_name"]:
         data["name"] = update.message.text.strip()
         data["awaiting_name"] = False
         await send_question(update, context)
-    elif data.get("awaiting_remark"):
+    elif data["awaiting_remark"]:
         data["remarks"].append(update.message.text.strip())
         data["awaiting_remark"] = False
         data["current_q"] += 1
         await send_question(update, context)
 
+# Send question
 async def send_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     current_q = user_data[user_id]["current_q"]
@@ -64,7 +65,6 @@ async def send_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
         q = questions[current_q]
         buttons = [[InlineKeyboardButton(opt, callback_data=opt)] for opt in q["options"]]
         reply_markup = InlineKeyboardMarkup(buttons)
-
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=f"Q{current_q + 1}: {q['text']}",
@@ -73,6 +73,7 @@ async def send_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await send_summary(update, context)
 
+# Handle button
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -91,6 +92,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         data["current_q"] += 1
         await send_question(update, context)
 
+# Send summary
 async def send_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     data = user_data[user_id]
@@ -117,18 +119,28 @@ async def send_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode='Markdown'
     )
 
-def main():
-    app = ApplicationBuilder().token("7998832352:AAENC5rlDMjQbLylmLsCHbzX5eZLV5mJoWs").build()
+# Main function (Webhook)
+async def main():
+    app = ApplicationBuilder().token(os.environ["BOT_TOKEN"]).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.add_error_handler(error_handler)
 
-    print("Bot running...")
-    app.run_polling()
+    await app.bot.set_webhook("https://your-railway-app.up.railway.app/webhook")
 
+    await app.run_webhook(
+        listen="0.0.0.0",
+        port=int(os.environ.get("PORT", 8000)),
+        webhook_path="/webhook"
+    )
+
+# Run it
 if __name__ == "__main__":
-    main()
+    import asyncio
+    asyncio.run(main())
+
 
 
 
