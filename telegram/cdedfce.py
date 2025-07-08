@@ -121,7 +121,7 @@ async def send_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Main function (Webhook)
 async def main():
-    app = ApplicationBuilder().token(os.environ["7998832352:AAENC5rlDMjQbLylmLsCHbzX5eZLV5mJoWs"]).build()
+    app = ApplicationBuilder().token(os.environ["BOT_TOKEN"]).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
