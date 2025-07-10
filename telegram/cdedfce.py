@@ -100,10 +100,11 @@ async def send_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
     now = datetime.now(IST).strftime("%d-%m-%Y %H:%M")
 
     summary_lines = [
-        f"*📄 Inspection Report - {now}*",
-        f"*👤 Inspected by:* {data['name']}",
-        ""
+    f"<b>📄 Inspection Report - {now}</b>",
+    f"<b>👤 Inspected by:</b> {data['name']}",
+    ""
     ]
+    summary_lines.append(f"<b>Q{i+1}:</b> {question}<br>Answer: {ans}<br>Remark: {remark}<br>")
 
     for i, question in enumerate(questions):
         ans = data["answers"][i]
@@ -111,7 +112,7 @@ async def send_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
         summary_lines.append(f"*Q{i+1}:* {question}\nAnswer: {ans}\nRemark: {remark}\n")
 
     summary_text = "\n".join(summary_lines)
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=summary_text, parse_mode='Markdown')
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=summary_text, parse_mode='HTML')
 
 # Error handler
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
