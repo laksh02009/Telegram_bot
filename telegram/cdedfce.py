@@ -30,11 +30,6 @@ questions = [
 # Per-user data
 user_data = {}
 
-def escape_markdown(text):
-    # Escape Telegram Markdown special characters
-    escape_chars = r'_*[]()~`>#+-=|{}.!'
-    return ''.join(f'\\{c}' if c in escape_chars else c for c in text)
-
 # Start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -98,21 +93,40 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def send_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     data = user_data[user_id]
+    
+    # Define name from the stored user data (or Telegram username)
+    name = data.get("name") or update.effective_user.first_name or "Unknown User"
+    
+    # Escape function to sanitize Markdown
+    def escape_markdown(text):
+        escape_chars = r'_*[]()~`>#+-=|{}.!'
+        return ''.join(f'\\{c}' if c in escape_chars else c for c in text)
 
-    ist = timezone(timedelta(hours=5, minutes=30))
-    now = datetime.now(ist).strftime("%d-%m-%Y %H:%M")
+    from datetime import datetime, timedelta, timezone
+    IST = timezone(timedelta(hours=5, minutes=30))
+    now = datetime.now(IST).strftime("%d-%m-%Y %H:%M")
 
     summary_lines = [
         f"*📄 Today's Report - {escape_markdown(now)}*",
         f"*👤 Inspected by:* {escape_markdown(name)}",
         ""
     ]
-    
+
     for i, q in enumerate(questions):
         q_text = escape_markdown(q['text'])
         ans = escape_markdown(data["answers"][i])
         remark = escape_markdown(data["remarks"][i])
         summary_lines.append(f"*Q{i+1}:* {q_text}\nAnswer: {ans}\nRemark: {remark}\n")
+
+    summary_text = "\n".join(summary_lines)
+
+    # Send the escaped message
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=summary_text,
+        parse_mode='Markdown'
+    )
+
 
 
     summary = "\n".join(summary_lines)
