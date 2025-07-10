@@ -30,6 +30,11 @@ questions = [
 # Per-user data
 user_data = {}
 
+def escape_markdown(text):
+    # Escape Telegram Markdown special characters
+    escape_chars = r'_*[]()~`>#+-=|{}.!'
+    return ''.join(f'\\{c}' if c in escape_chars else c for c in text)
+
 # Start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -97,16 +102,18 @@ async def send_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ist = timezone(timedelta(hours=5, minutes=30))
     now = datetime.now(ist).strftime("%d-%m-%Y %H:%M")
 
-    summary_lines = [
-        f"<b>📄 Today's Report - {now}</b>",
-        f"<b>👤 Inspected by:</b> {data['name']}",
-        ""
+   summary_lines = [
+    f"*📄 Today's Report - {escape_markdown(now)}*",
+    f"*👤 Inspected by:* {escape_markdown(name)}",
+    ""
     ]
-
+    
     for i, q in enumerate(questions):
-        summary_lines.append(
-            f"<b>Q{i+1}:</b> {q}<br><b>Answer:</b> {data['answers'][i]}<br><b>Remark:</b> {data['remarks'][i]}<br>"
-        )
+        q_text = escape_markdown(q['text'])
+        ans = escape_markdown(data["answers"][i])
+        remark = escape_markdown(data["remarks"][i])
+        summary_lines.append(f"*Q{i+1}:* {q_text}\nAnswer: {ans}\nRemark: {remark}\n")
+
 
     summary = "\n".join(summary_lines)
 
