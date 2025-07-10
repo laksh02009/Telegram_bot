@@ -102,10 +102,10 @@ async def send_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ist = timezone(timedelta(hours=5, minutes=30))
     now = datetime.now(ist).strftime("%d-%m-%Y %H:%M")
 
-   summary_lines = [
-    f"*📄 Today's Report - {escape_markdown(now)}*",
-    f"*👤 Inspected by:* {escape_markdown(name)}",
-    ""
+    summary_lines = [
+        f"*📄 Today's Report - {escape_markdown(now)}*",
+        f"*👤 Inspected by:* {escape_markdown(name)}",
+        ""
     ]
     
     for i, q in enumerate(questions):
