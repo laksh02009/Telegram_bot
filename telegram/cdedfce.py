@@ -30,6 +30,11 @@ questions = [
 # Per-user session storage
 user_data = {}
 
+# Proper escaping for MarkdownV2
+def escape_markdown_v2(text: str) -> str:
+    escape_chars = r'\_*[]()~`>#+-=|{}.!'
+    return ''.join(f'\\{c}' if c in escape_chars else c for c in text)
+
 # Start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -43,7 +48,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     }
     await send_question(update, context)
 
-# Handle remarks and other messages
+# Handle remarks
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     data = user_data.get(user_id)
@@ -59,7 +64,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         data["current_q"] += 1
         await send_question(update, context)
 
-# Ask next question
+# Send question
 async def send_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     current_q = user_data[user_id]["current_q"]
@@ -79,7 +84,7 @@ async def send_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await send_summary(update, context)
 
-# Handle button selections
+# Button selection handler
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -93,7 +98,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         data["answers"].append(answer)
         if answer == "No":
             data["awaiting_remark"] = True
-            await query.message.reply_text("⚠️ Please provide a *remark* for this issue:", parse_mode='Markdown')
+            await query.message.reply_text("⚠️ Please provide a *remark* for this issue:", parse_mode='MarkdownV2')
         else:
             data["follow_up_for_yes"] = True
             buttons = [
@@ -111,44 +116,45 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         data["awaiting_remark"] = True
         await query.message.reply_text("📝 Please enter your remark:")
 
-def escape_markdown_v2(text):
-    escape_chars = r'_*\[\]()~`>#+-=|{}.!'
-    return ''.join(f'\\{c}' if c in escape_chars else c for c in text)
-
-# Summary report
+# Send formatted summary
 async def send_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     data = user_data[user_id]
 
-    name = data["name"]
+    name = escape_markdown_v2(data["name"])
     IST = timezone(timedelta(hours=5, minutes=30))
     now = datetime.now(IST).strftime("%d-%m-%Y %H:%M")
+    now = escape_markdown_v2(now)
 
-    summary_lines = [f"*📄 Today's Report - {escape_markdown_v2(now)}*", f"*👤 Inspected by:* {escape_markdown_v2(name)}", ""]
+    lines = [
+        f"*📄 Today's Report - {now}*",
+        f"*👤 Inspected by:* {name}",
+        ""
+    ]
 
     for i, q_text in enumerate(questions):
         ans = data["answers"][i]
         remark = data["remarks"][i].strip()
 
+        # Skip Yes + N/A remarks
         if ans == "Yes" and remark.upper() == "N/A":
             continue
 
         escaped_q = escape_markdown_v2(q_text)
         escaped_ans = "✅ Yes" if ans == "Yes" else "❌ No"
+        escaped_ans = escape_markdown_v2(escaped_ans)
         escaped_remark = escape_markdown_v2(remark)
 
-        summary_lines.append(f"*Q{i+1}:* {escaped_q} — *{escaped_ans}* — _{escaped_remark}_")
+        lines.append(f"*Q{i+1}:* {escaped_q} — *{escaped_ans}* — _{escaped_remark}_")
 
-    summary = "\n".join(summary_lines)
+    summary = "\n".join(lines)
     await context.bot.send_message(chat_id=update.effective_chat.id, text=summary, parse_mode='MarkdownV2')
 
-
-
-# Error logging
+# Error handler
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
     logging.error("Exception while handling update:", exc_info=context.error)
 
-# Launch application
+# Launch app
 from telegram.ext import Application
 
 app = ApplicationBuilder().token(os.environ["BOT_TOKEN"]).build()
@@ -158,7 +164,7 @@ app.add_handler(CallbackQueryHandler(button))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 app.add_error_handler(error_handler)
 
-# For Railway or similar deployments
+# Run on Railway
 app.run_webhook(
     listen="0.0.0.0",
     port=int(os.environ.get("PORT", 8080)),
