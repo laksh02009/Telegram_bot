@@ -124,7 +124,11 @@ async def send_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
     IST = timezone(timedelta(hours=5, minutes=30))
     now = datetime.now(IST).strftime("%d-%m-%Y %H:%M")
 
-    summary_lines = [f"📄 Today's Report - {escape_markdown(now)}", f"👤 Inspected by: {escape_markdown(name)}", ""]
+    lines = [
+        f"<b>📄 Today's Report - {now}</b>",
+        f"<b>👤 Inspected by:</b> {name}",
+        ""
+    ]
 
     for i, q_text in enumerate(questions):
         ans = data["answers"][i]
@@ -133,14 +137,12 @@ async def send_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if ans == "Yes" and remark.upper() == "N/A":
             continue
 
-        escaped_q = escape_markdown(q_text)
-        escaped_ans = "✅ Yes" if ans == "Yes" else "❌ No"
-        escaped_remark = escape_markdown(remark)
+        ans_text = "✅ Yes" if ans == "Yes" else "❌ No"
+        lines.append(f"<b>Q{i+1}:</b> {q_text} — <b>{ans_text}</b> — <i>{remark}</i>")
 
-        summary_lines.append(f"Q{i+1}: {escaped_q} — {escaped_ans} — {escaped_remark}")
+    summary = "\n".join(lines)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=summary, parse_mode='HTML')
 
-    summary = "\n".join(summary_lines)
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=summary, parse_mode='Markdown')
 
 
 
