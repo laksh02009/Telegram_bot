@@ -7,10 +7,10 @@ from telegram.ext import (
     MessageHandler, filters, ContextTypes
 )
 
-# Enable logging
+# Logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-# Checklist questions
+# Questions
 questions = [
     "Is ev charging machine in use",
     "Is the UDS cleaning person available",
@@ -27,17 +27,15 @@ questions = [
     "Sunroof opening/closing being checked at S&R"
 ]
 
-# Per-user session storage
+# Per-user data
 user_data = {}
 
-# Proper escaping for MarkdownV2
-# Update this function:
+# Escape MarkdownV2 properly
 def escape_markdown_v2(text: str) -> str:
-    escape_chars = r'_*\[\]()~`>#+-=|{}.!'
+    escape_chars = r'\_*[]()~`>#+-=|{}.!'
     return ''.join(f'\\{c}' if c in escape_chars else c for c in text)
 
-
-# Start command
+# Start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     user_data[user_id] = {
@@ -66,7 +64,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         data["current_q"] += 1
         await send_question(update, context)
 
-# Send question
+# Send next question
 async def send_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     current_q = user_data[user_id]["current_q"]
@@ -86,14 +84,12 @@ async def send_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await send_summary(update, context)
 
-# Button selection handler
+# Handle button clicks
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     user_id = query.from_user.id
     data = user_data[user_id]
-
-    current_q = data["current_q"]
     answer = query.data
 
     if answer in ["Yes", "No"]:
@@ -118,7 +114,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         data["awaiting_remark"] = True
         await query.message.reply_text("📝 Please enter your remark:")
 
-# Send formatted summary
+# Summary generator
 async def send_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     data = user_data[user_id]
@@ -138,37 +134,40 @@ async def send_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ans = data["answers"][i]
         remark = data["remarks"][i].strip()
 
-        # Skip Yes + N/A remarks
+        # Skip question if Yes + N/A
         if ans == "Yes" and remark.upper() == "N/A":
             continue
 
         escaped_q = escape_markdown_v2(q_text)
-        escaped_ans = "✅ Yes" if ans == "Yes" else "❌ No"
-        escaped_ans = escape_markdown_v2(escaped_ans)
+        escaped_ans = escape_markdown_v2("✅ Yes" if ans == "Yes" else "❌ No")
         escaped_remark = escape_markdown_v2(remark)
 
         lines.append(f"*Q{i+1}:* {escaped_q} — *{escaped_ans}* — _{escaped_remark}_")
 
     summary = "\n".join(lines)
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=summary, parse_mode='MarkdownV2')
 
-# Error handler
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=summary,
+        parse_mode='MarkdownV2'
+    )
+
+# Error logger
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
     logging.error("Exception while handling update:", exc_info=context.error)
 
-# Launch app
+# App setup
 from telegram.ext import Application
-
 app = ApplicationBuilder().token(os.environ["BOT_TOKEN"]).build()
-
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CallbackQueryHandler(button))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 app.add_error_handler(error_handler)
 
-# Run on Railway
+# Webhook for Railway (or use .run_polling() locally)
 app.run_webhook(
     listen="0.0.0.0",
     port=int(os.environ.get("PORT", 8080)),
     webhook_url="https://telegrambot-production-fa9e.up.railway.app"
 )
+
