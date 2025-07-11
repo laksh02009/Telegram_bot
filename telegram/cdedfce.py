@@ -111,6 +111,10 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         data["awaiting_remark"] = True
         await query.message.reply_text("📝 Please enter your remark:")
 
+def escape_markdown(text):
+    escape_chars = r'_*[]()~`>#+-=|{}.!'
+    return ''.join(f'\\{c}' if c in escape_chars else c for c in text)
+
 # Summary report
 async def send_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -120,24 +124,25 @@ async def send_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
     IST = timezone(timedelta(hours=5, minutes=30))
     now = datetime.now(IST).strftime("%d-%m-%Y %H:%M")
 
-    lines = [f"*📄 Today's Report - {now}*", f"*👤 Inspected by:* {name}", ""]
+    summary_lines = [f"*📄 Today's Report - {escape_markdown(now)}*", f"*👤 Inspected by:* {escape_markdown(name)}", ""]
 
     for i, q_text in enumerate(questions):
         ans = data["answers"][i]
         remark = data["remarks"][i].strip()
-    
-        # ✅ Skip the question if remark is "N/A" and answer was "Yes"
+
         if ans == "Yes" and remark.upper() == "N/A":
             continue
-    
+
         escaped_q = escape_markdown(q_text)
         escaped_ans = "✅ Yes" if ans == "Yes" else "❌ No"
         escaped_remark = escape_markdown(remark)
+
         summary_lines.append(f"*Q{i+1}:* {escaped_q} — *{escaped_ans}* — _{escaped_remark}_")
 
-
-    summary = "\n".join(lines)
+    summary = "\n".join(summary_lines)
     await context.bot.send_message(chat_id=update.effective_chat.id, text=summary, parse_mode='Markdown')
+
+
 
 # Error logging
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
