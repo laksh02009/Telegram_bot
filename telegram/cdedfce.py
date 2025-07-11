@@ -122,13 +122,19 @@ async def send_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     lines = [f"*📄 Today's Report - {now}*", f"*👤 Inspected by:* {name}", ""]
 
-    for i, question in enumerate(questions):
-        ans = data["answers"][i]
-        remark = data["remarks"][i]
+    for i, q_text in enumerate(questions):
+    ans = data["answers"][i]
+    remark = data["remarks"][i].strip()
 
-        # Color emoji
-        ans_colored = "✅ Yes" if ans == "Yes" else "❌ No"
-        lines.append(f"*Q{i+1}:* {question} — *{ans_colored}* — _{remark}_")
+    # ✅ Skip the question if remark is "N/A" and answer was "Yes"
+    if ans == "Yes" and remark.upper() == "N/A":
+        continue
+
+    escaped_q = escape_markdown(q_text)
+    escaped_ans = "✅ Yes" if ans == "Yes" else "❌ No"
+    escaped_remark = escape_markdown(remark)
+    summary_lines.append(f"*Q{i+1}:* {escaped_q} — *{escaped_ans}* — _{escaped_remark}_")
+
 
     summary = "\n".join(lines)
     await context.bot.send_message(chat_id=update.effective_chat.id, text=summary, parse_mode='Markdown')
