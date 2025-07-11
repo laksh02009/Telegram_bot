@@ -123,17 +123,17 @@ async def send_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lines = [f"*📄 Today's Report - {now}*", f"*👤 Inspected by:* {name}", ""]
 
     for i, q_text in enumerate(questions):
-    ans = data["answers"][i]
-    remark = data["remarks"][i].strip()
-
-    # ✅ Skip the question if remark is "N/A" and answer was "Yes"
-    if ans == "Yes" and remark.upper() == "N/A":
-        continue
-
-    escaped_q = escape_markdown(q_text)
-    escaped_ans = "✅ Yes" if ans == "Yes" else "❌ No"
-    escaped_remark = escape_markdown(remark)
-    summary_lines.append(f"*Q{i+1}:* {escaped_q} — *{escaped_ans}* — _{escaped_remark}_")
+        ans = data["answers"][i]
+        remark = data["remarks"][i].strip()
+    
+        # ✅ Skip the question if remark is "N/A" and answer was "Yes"
+        if ans == "Yes" and remark.upper() == "N/A":
+            continue
+    
+        escaped_q = escape_markdown(q_text)
+        escaped_ans = "✅ Yes" if ans == "Yes" else "❌ No"
+        escaped_remark = escape_markdown(remark)
+        summary_lines.append(f"*Q{i+1}:* {escaped_q} — *{escaped_ans}* — _{escaped_remark}_")
 
 
     summary = "\n".join(lines)
