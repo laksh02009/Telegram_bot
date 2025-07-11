@@ -31,9 +31,11 @@ questions = [
 user_data = {}
 
 # Proper escaping for MarkdownV2
+# Update this function:
 def escape_markdown_v2(text: str) -> str:
-    escape_chars = r'\_*[]()~`>#+-=|{}.!'
+    escape_chars = r'_*\[\]()~`>#+-=|{}.!'
     return ''.join(f'\\{c}' if c in escape_chars else c for c in text)
+
 
 # Start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
