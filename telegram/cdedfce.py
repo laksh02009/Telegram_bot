@@ -60,9 +60,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         remark = update.message.text.strip()
         data["remarks"].append(remark)
         data["awaiting_remark"] = False
-        data["follow_up_for_yes"] = False
-        data["current_q"] += 1
-        await send_question(update, context)
+
+        # Increment question only if we were waiting on a Yes-followup OR No-answer remark
+    if data["follow_up_for_yes"]:
+            data["follow_up_for_yes"] = False
+            data["current_q"] += 1
+    elif not data["follow_up_for_yes"]:  # For "No"
+            data["current_q"] += 1
+
+    await send_question(update, context)
 
 # Send next question
 async def send_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
